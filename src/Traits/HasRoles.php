@@ -8,6 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Contracts\Permission;
 use Spatie\Permission\Contracts\Role;
+use Spatie\Permission\Events\RoleChangeEvent;
 use Spatie\Permission\PermissionRegistrar;
 
 trait HasRoles
@@ -155,6 +156,7 @@ trait HasRoles
         if ($model->exists) {
             $currentRoles = $this->roles->map(fn ($role) => $role->getKey())->toArray();
 
+            event(new RoleChangeEvent($model, $roles, $currentRoles));
             $this->roles()->attach(array_diff($roles, $currentRoles), $teamPivot);
             $model->unsetRelation('roles');
         } else {
@@ -165,6 +167,8 @@ trait HasRoles
                     if ($model->getKey() != $object->getKey()) {
                         return;
                     }
+
+                    event(new RoleChangeEvent($model, $roles, []));
                     $model->roles()->attach($roles, $teamPivot);
                     $model->unsetRelation('roles');
                 }
